@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  background: #101014;
+  color: #f3f4f6;
+}
+
+body {
+  background: #101014;
+  color: #f3f4f6;
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors shadow-none;
+  }
+  .btn-secondary {
+    @apply px-4 py-2 bg-card text-accent-500 rounded-lg border border-border hover:bg-background-800 transition-colors shadow-none;
+  }
+  .btn-accent {
+    @apply px-4 py-2 bg-accent-500 text-black rounded-lg hover:bg-accent-600 transition-colors shadow-none;
+  }
+  .card {
+    @apply bg-card rounded-xl shadow-md p-6 border border-border;
+  }
+}
+
+.dark html, .dark body {
+  background: #101014;
+  color: #f3f4f6;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  background: #18181c;
+}
+::-webkit-scrollbar-thumb {
+  background: #23232a;
+  border-radius: 4px;
+} 

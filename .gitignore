@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+venv/
+.env
+.env.*
+
+# Jupyter
+.ipynb_checkpoints
+
+# Outputs and data
+outputs/
+*.wav
+*.mp3
+*.mid
+*.midi
+*.h5
+*.ckpt
+*.pth
+*.npz
+*.npy
+
+# Node.js
+node_modules/
+frontend/.next/
+frontend/.env
+frontend/.env.*
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# Docker
+**/.docker/
+**/Dockerfile*
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Misc
+*.swp
+*.swo 

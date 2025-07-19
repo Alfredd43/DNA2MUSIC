@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # Redis for Celery broker
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - BACKEND_URL=http://localhost:8000
+    depends_on:
+      - redis
+    volumes:
+      - ./outputs:/app/outputs
+    restart: unless-stopped
+
+  # Celery worker
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - backend
+    volumes:
+      - ./outputs:/app/outputs
+      - ./dna2music/models/checkpoints:/app/dna2music/models/checkpoints
+    restart: unless-stopped
+
+  # Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - BACKEND_URL=http://localhost:8000
+      - NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app/frontend
+      - /app/frontend/node_modules
+    restart: unless-stopped
+
+volumes:
+  redis_data: 

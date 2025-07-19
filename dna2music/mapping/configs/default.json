@@ -1,0 +1,6 @@
+{
+  "alphabet": {"A": 60, "C": 64, "G": 67, "T": 69},
+  "duration_rule": {"GC<0.35": 0.25, "GC<0.55": 0.5, "default": 1.0},
+  "velocity_rule": {"entropy<1.5": 60, "entropy<3.5": 80, "default": 100},
+  "scale_mask": [0, 2, 4, 5, 7, 9, 11]
+} 
