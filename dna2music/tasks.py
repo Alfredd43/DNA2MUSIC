@@ -2,40 +2,48 @@ import os
 import numpy as np
 import soundfile as sf
 from dna2music.mapping import parser, composer
+from dna2music.utils.audio import generate_audio_simple
+import json
 
-def process_dna_task(job_id, file_content, jobs):
+def process_dna_task(job_id, file_content, redis_client):
     try:
         # Parse DNA
         seq = parser.parse_dna(file_content.decode())
         # Generate features
         features = parser.sliding_features(seq, window=100, step=10)
+        gc_seq = features['gc'].tolist() if 'gc' in features else None
+        entropy_seq = features['entropy'].tolist() if 'entropy' in features else None
         # Compose chords
         chords = composer.compose_chords(seq)
-        # Convert to note events
-        notes = composer.to_note_events(chords)
+        # Convert to note events with dynamic mapping
+        from dna2music.mapping.composer import RHYTHM_RULES
+        notes = composer.to_note_events(
+            chords,
+            gc_seq=gc_seq,
+            entropy_seq=entropy_seq,
+            mode='beautiful',
+            rhythm_rules=RHYTHM_RULES
+        )
         # Generate audio
-        sample_rate = 44100
-        duration = 0.1  # seconds per note
-        audio_samples = []
-        for note in notes:
-            frequency = 440 * (2 ** ((note['pitch'] - 69) / 12))  # A4 = 440Hz
-            t = np.linspace(0, duration, int(sample_rate * duration))
-            wave = np.sin(2 * np.pi * frequency * t)
-            wave *= note['velocity'] / 127.0
-            audio_samples.append(wave)
-        audio = np.concatenate(audio_samples)
-        audio = audio / np.max(np.abs(audio))
-        output_path = f"outputs/{job_id}.wav"
-        os.makedirs("outputs", exist_ok=True)
-        sf.write(output_path, audio, sample_rate)
-        # Update job status
-        jobs[job_id]["status"] = "completed"
-        jobs[job_id]["result"] = {
-            "audio_path": f"/files/{job_id}.wav",
-            "note_count": len(notes),
-            "sequence_length": len(seq),
-            "notes": notes[:50]
-        }
+        audio_path = generate_audio_simple(notes, job_id)
+        # Update job status in Redis
+        redis_client.hset(f"job:{job_id}", mapping={
+            "status": "completed",
+            "result": json.dumps({
+                "audio_path": f"/files/{job_id}.wav",
+                "note_count": len(notes),
+                "sequence_length": len(seq),
+                "notes": notes[:50]
+            }),
+            "error": ""
+        })
+    except UnicodeDecodeError:
+        redis_client.hset(f"job:{job_id}", mapping={
+            "status": "failed",
+            "error": "File could not be decoded. Please upload a valid text file."
+        })
     except Exception as e:
-        jobs[job_id]["status"] = "failed"
-        jobs[job_id]["error"] = str(e) 
+        redis_client.hset(f"job:{job_id}", mapping={
+            "status": "failed",
+            "error": f"Processing error: {str(e)}"
+        }) 

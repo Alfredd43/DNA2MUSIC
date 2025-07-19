@@ -10,11 +10,12 @@ interface Note {
 
 interface PianoRollProps {
   notes: Note[]
+  onSvgReady?: (svg: string) => void
 }
 
 const PIANO_ROLL_ID = 'pianoroll-canvas'
 
-export default function PianoRoll({ notes }: PianoRollProps) {
+export default function PianoRoll({ notes, onSvgReady }: PianoRollProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -47,11 +48,15 @@ export default function PianoRoll({ notes }: PianoRollProps) {
         voices: [score.voice(score.notes(vexNotes))]
       })
       factory.draw()
+      // Export SVG
+      const svgElem = document.getElementById(PIANO_ROLL_ID)?.querySelector('svg')
+      if (svgElem && onSvgReady) {
+        onSvgReady(svgElem.outerHTML)
+      }
     } catch (err) {
       // If VexFlow throws, just skip drawing
-      // Optionally log: console.warn('VexFlow error:', err)
     }
-  }, [notes])
+  }, [notes, onSvgReady])
 
   const getNoteName = (pitch: number): string => {
     const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
@@ -61,7 +66,6 @@ export default function PianoRoll({ notes }: PianoRollProps) {
   }
 
   const getDuration = (duration: number): string => {
-    // Convert duration to musical notation
     if (duration <= 0.25) return '16'
     if (duration <= 0.5) return '8'
     if (duration <= 1) return '4'
