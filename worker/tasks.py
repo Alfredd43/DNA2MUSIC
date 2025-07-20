@@ -6,8 +6,6 @@ from dna2music.mapping import parser, composer
 from dna2music.models.lstm_melody import LSTMMelody, encode_abc_style, decode_abc_style
 import torch
 from dna2music.utils.audio import generate_audio_simple
-import soundfile as sf
-import librosa
 
 # Initialize Celery
 celery_app = Celery('dna2music')
@@ -22,9 +20,23 @@ def enhance_with_lstm(notes):
     model.eval()
     # Convert notes to ABC-like encoding
     abc_encoded = encode_abc_style(notes)
-    # For demo: just return notes (implement real LSTM inference as needed)
-    # You would tokenize abc_encoded, run through model, decode output
-    return notes
+    # Tokenize: convert ABC string to integer indices (simple mapping: pitch only)
+    tokens = [int(tok[1:]) for tok in abc_encoded.split()]
+    input_tensor = torch.tensor(tokens, dtype=torch.long).unsqueeze(0)  # shape (1, seq_len)
+    with torch.no_grad():
+        output, _ = model(input_tensor)
+        # Get predicted pitches (argmax over vocab)
+        pred_indices = output.argmax(dim=-1).squeeze(0).tolist()
+    # Decode back to note events
+    enhanced_notes = []
+    for idx, orig_note in enumerate(notes):
+        pitch = pred_indices[idx] if idx < len(pred_indices) else orig_note.get('pitch', 60)
+        enhanced_notes.append({
+            'pitch': pitch,
+            'duration': orig_note.get('duration', 1.0),
+            'velocity': orig_note.get('velocity', 100)
+        })
+    return enhanced_notes
 
 def enhance_with_musicvae(notes):
     # Stub for MusicVAE integration

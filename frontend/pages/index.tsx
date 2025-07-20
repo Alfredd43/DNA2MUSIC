@@ -6,17 +6,16 @@ import PianoRoll from '../components/PianoRoll';
 import AudioPlayer from '../components/AudioPlayer';
 import Hero from '../components/Hero';
 import DNAHighlighter from '../components/DNAHighlighter';
-import { useAppStore } from '../store/useAppStore';
+import { useAppStore, ApiResult, Note } from '../store/useAppStore';
 import { Midi } from '@tonejs/midi';
 
 export default function Home() {
   const {
     jobId, status, progress, result, error, beautifulMode,
-    setJobId, setStatus, setProgress, setResult, setError, setBeautifulMode
+    setJobId, setStatus, setProgress, setResult, setError, setBeautifulMode,
+    dnaSeq, setDnaSeq, sheetSvg, setSheetSvg
   } = useAppStore();
   const [currentNoteIdx, setCurrentNoteIdx] = useState(0);
-  const [dnaSeq, setDnaSeq] = useState('');
-  const [sheetSvg, setSheetSvg] = useState<string | null>(null);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -30,8 +29,8 @@ export default function Home() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('beautiful', beautifulMode ? '1' : '0');
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-      const response = await axios.post(`${backendUrl}/submit`, formData, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const response = await axios.post(`${backendUrl}/api/submit`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       const { job_id } = response.data;
@@ -47,11 +46,11 @@ export default function Home() {
   const pollStatus = async (jobId: string) => {
     const interval = setInterval(async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-        const response = await axios.get(`${backendUrl}/status/${jobId}`);
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+        const response = await axios.get(`${backendUrl}/api/status/${jobId}`);
         const { status: jobStatus } = response.data;
         if (jobStatus === 'completed') {
-          const resultResponse = await axios.get(`${backendUrl}/result/${jobId}`);
+          const resultResponse = await axios.get(`${backendUrl}/api/result/${jobId}`);
           setResult(resultResponse.data);
           setStatus('completed');
           setProgress(100);
@@ -61,7 +60,7 @@ export default function Home() {
           setStatus('idle');
           clearInterval(interval);
         } else {
-          setProgress(prev => Math.min(prev + 10, 90));
+          setProgress(Math.min(progress + 10, 90));
         }
       } catch (err) {
         setError('Status check failed.');
@@ -74,10 +73,10 @@ export default function Home() {
   // Download MIDI and Sheet Music (to be implemented)
   const downloadMidi = () => {
     if (!result || !result.result || !result.result.notes) return;
-    const notes = result.result.notes;
+    const notes: Note[] = result.result.notes;
     const midi = new Midi();
     const track = midi.addTrack();
-    notes.forEach((note: any) => {
+    notes.forEach((note: Note) => {
       track.addNote({
         midi: note.pitch,
         time: note.start,

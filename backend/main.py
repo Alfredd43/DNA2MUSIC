@@ -36,7 +36,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/submit")
+@app.post("/api/submit")
 async def submit_dna(file: UploadFile, background_tasks: BackgroundTasks):
     allowed_types = ['.fasta', '.fastq', '.txt', '.fa']
     if not any(file.filename.endswith(ext) for ext in allowed_types):
@@ -65,7 +65,7 @@ async def submit_dna(file: UploadFile, background_tasks: BackgroundTasks):
     except Exception as e:
         raise HTTPException(500, f"Unexpected error: {str(e)}")
 
-@app.get("/result/{job_id}")
+@app.get("/api/result/{job_id}")
 async def get_result(job_id: str):
     job = get_job(job_id)
     if not job:
@@ -75,7 +75,7 @@ async def get_result(job_id: str):
             "job_id": job_id,
             "status": "completed",
             "result": json.loads(job["result"]) if job["result"] else None,
-            "download_url": f"/download/{job_id}"
+            "download_url": f"/api/download/{job_id}"
         }
     elif job.get("status") == "failed":
         return {
@@ -90,7 +90,7 @@ async def get_result(job_id: str):
             "message": "Processing in progress..."
         }
 
-@app.get("/status/{job_id}")
+@app.get("/api/status/{job_id}")
 async def get_status(job_id: str):
     job = get_job(job_id)
     if not job:
@@ -101,7 +101,7 @@ async def get_status(job_id: str):
         "created_at": job.get("created_at")
     }
 
-@app.get("/download/{job_id}")
+@app.get("/api/download/{job_id}")
 async def download_result(job_id: str):
     job = get_job(job_id)
     if not job or job.get("status") != "completed":
@@ -111,7 +111,7 @@ async def download_result(job_id: str):
         raise HTTPException(404, "Audio file not found")
     return {"download_url": f"/files/{job_id}.wav"}
 
-@app.get("/health")
+@app.get("/api/health")
 async def health_check():
     # Count jobs in Redis (optional, can be slow for large sets)
     jobs_count = len(redis_client.keys("job:*"))

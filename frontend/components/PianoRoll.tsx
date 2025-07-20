@@ -31,10 +31,9 @@ export default function PianoRoll({ notes, onSvgReady }: PianoRollProps) {
       })
       .filter(n => n && typeof n === 'string' && n.trim().length > 0)
 
-    // Only draw if at least 2 unique, valid notes
-    const uniqueNotes = Array.from(new Set(vexNotesArr))
-    if (uniqueNotes.length < 2) return
-    const vexNotes = uniqueNotes.join(', ')
+    // Only draw if at least 1 valid note
+    if (vexNotesArr.length < 1) return
+    const vexNotes = vexNotesArr.join(', ')
     if (!vexNotes) return
 
     // Initialize VexFlow
@@ -75,7 +74,7 @@ export default function PianoRoll({ notes, onSvgReady }: PianoRollProps) {
   return (
     <div className="bg-gray-50 rounded-lg p-4 overflow-x-auto">
       <div ref={containerRef} id={PIANO_ROLL_ID} className="min-w-full" />
-      {notes.length < 2 && (
+      {notes.length < 1 && (
         <div className="text-center text-gray-500 py-8">
           Not enough notes to display a score
         </div>

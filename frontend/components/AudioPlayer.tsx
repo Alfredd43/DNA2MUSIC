@@ -13,7 +13,7 @@ export default function AudioPlayer({ audioUrl }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
 
   // Construct full URL
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const fullAudioUrl = audioUrl.startsWith('http') 
     ? audioUrl 
     : `${backendUrl}${audioUrl}`
